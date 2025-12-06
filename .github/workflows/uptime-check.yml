@@ -1,0 +1,27 @@
+---
+name: Uptime Checker
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch: null
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check gtel.in health
+        id: request
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://gtel.in)
+          echo "STATUS=$STATUS"
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+      - name: Send Telegram alert if status >= 500
+        if: ${{ steps.request.outputs.status >= 500 }}
+        run: >
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN
+          }}/sendMessage" \
+
+          -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+
+          -d text="🚨 *ALERT:* gtel.in is DOWN! (Status: ${{ steps.request.outputs.status }})" \
+
+          -d parse_mode="Markdown"
